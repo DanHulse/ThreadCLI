@@ -1,0 +1,23 @@
+﻿1-Entrance
+##
+You are at the entrance of the house, you can go *Forward* to the Kitchen,
+the door to the *Right* is tied by a rope,
+the door *Behind* you leads back outside.
+##
+Knife-(LOOK)"This is a knife"-(TAKE)"Took the knife"^
+Bottle-(LOOK)"Maybe poison??"-(USE)[13]-(TAKE)"Took the bottle"^
+Rope-(LOOK)"The rope is tied"-(TAKE){Knife}"Cut the rope"|"Have to cut it"^
+Forward-(MOVE)[2]
+Right-(MOVE){Rope}[4]
+Behind-(MOVE){!Knife}[5]
+###2-Kitchen
+##
+The kitchen was dark
+##
+Down-(MOVE)[1]
+Left-(MOVE)[3]
+###3-Dining Room
+##
+The dining room still had food on the table
+##
+Down-(MOVE)[2]

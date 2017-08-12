@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "ThreadCLI": {
+      "commandName": "Project",
+      "commandLineArgs": "C:\\Source\\Repos\\Thread\\ThreadCLI\\Data\\Test.txt"
+    }
+  }
+}
