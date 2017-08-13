@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Text.RegularExpressions;
+using ThreadCLI.Helpers;
 using ThreadCLI.Services.Interfaces;
 
 namespace ThreadCLI.Services
@@ -33,7 +33,7 @@ namespace ThreadCLI.Services
                     dataString = streamReader.ReadToEnd();
                 }
 
-                var dataFileSplit = Regex.Split(dataString, Regex.Escape("###"));
+                var dataFileSplit = dataString.SplitString("{{Scene}}");
 
                 return dataFileSplit.ToList();
             }

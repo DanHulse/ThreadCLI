@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text.RegularExpressions;
+using ThreadCLI.Helpers;
 using ThreadCLI.Models;
 using ThreadCLI.Models.Enumerations;
 using ThreadCLI.Services.Interfaces;
@@ -17,11 +17,11 @@ namespace ThreadCLI.Services
         /// <returns>A constructed <see cref="Scene"/></returns>
         public Scene Construct(string sceneData)
         {
-            var sceneDataSplit = Regex.Split(sceneData, Regex.Escape("##"));
+            var sceneDataSplit = sceneData.SplitString("\r\n", "\n");
 
-            var sceneInfo = this.ConstructSceneInfo(sceneDataSplit[0]);
-            var script = this.ConstructScript(sceneDataSplit[1]);
-            var actions = this.ConstructSceneActions(sceneDataSplit[2]);
+            var sceneInfo = this.ConstructSceneInfo(sceneDataSplit.First());
+            var script = this.ConstructScript(sceneDataSplit.Where(w => w.StartsWith("#")).Select(s => s.TrimStart('#')).ToArray());
+            var actions = this.ConstructSceneActions(sceneDataSplit.Where(w => w.StartsWith("@")).Select(s => s.TrimStart('@')).ToArray());
 
             var scene = new Scene
             {
@@ -34,40 +34,54 @@ namespace ThreadCLI.Services
             return scene;
         }
 
+        /// <summary>
+        /// Constructs the scene information.
+        /// </summary>
+        /// <param name="sceneInfoData">The scene information data.</param>
+        /// <returns>Value tuple containing scene information</returns>
         private (int sceneNumber, string sceneName) ConstructSceneInfo(string sceneInfoData)
         {
-            var sceneInfo = sceneInfoData.Split('-').ToList();
+            var sceneInfo = sceneInfoData.SplitString("-");
 
             return (Int32.Parse(sceneInfo.First()), sceneInfo.Last());
         }
 
-        private string[] ConstructScript(string scriptData)
+        /// <summary>
+        /// Constructs the script.
+        /// </summary>
+        /// <param name="scriptData">The script data.</param>
+        /// <returns>String array containing the script for the scene</returns>
+        private string[] ConstructScript(string[] scriptData)
         {
-            var script = scriptData.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None);
-
-            return script;
+            return scriptData;
         }
 
-        private IEnumerable<SceneAction> ConstructSceneActions(string actionData)
+        /// <summary>
+        /// Constructs the scene actions.
+        /// </summary>
+        /// <param name="actionData">The action data.</param>
+        /// <returns>IEnumerable of actions that can be performed in the scene</returns>
+        private IEnumerable<SceneAction> ConstructSceneActions(string[] actionData)
         {
             List<SceneAction> sceneActions = new List<SceneAction>();
-            var actions = actionData.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.None).ToList();
 
-            foreach (var action in actions)
+            foreach (var action in actionData)
             {
-                var actionSplit = action.Split('-').ToList();
+                var actionSplit = action.SplitString("-");
 
-                foreach (var verbAction in actionSplit.Skip(1))
+                foreach (var verbAction in actionSplit.Last().SplitString("(", ")"))
                 {
+                    var subScripts = verbAction.ParseString("\"", "\"").SplitString("|");
+
                     var sceneAction = new SceneAction
                     {
                         KeyWord = actionSplit.First(),
-                        KeyWordVerb = (Verb)Enum.Parse(typeof(Verb), Regex.Match(verbAction, @"\(([^)]*)\)").Groups[1].Value),
+                        KeyWordVerb = verbAction.ParseEnum<Verb>("*"),
                         AddToWordBag = verbAction.Contains("^") ? true : false,
-                        NavigateToScene = verbAction.Contains("[") ? Int32.Parse(Regex.Match(verbAction, @"\[([^)]*)\]").Groups[1].Value) : (int?)null,
-                        ItemCheckConditions = this.ConstructSceneActionConditions(Regex.Match(verbAction, @"\{([^)]*)\}").Groups[1].Value),
-                        SuccessResultScript = Regex.Match(verbAction, "\"([^\"]*)\"").Groups[1].Value,
-                        FailureResultScript = verbAction.Contains("|") ? Regex.Match(verbAction, "\"([^\"]*)\"").Groups[3].Value : null
+                        NavigateToScene = verbAction.ParseInt("[", "]"),
+                        ItemCheckConditions = this.ConstructSceneActionConditions(verbAction.ParseString("{", "}")),
+                        SuccessResultScript = subScripts.ElementAtOrDefault(0),
+                        FailureResultScript = subScripts.ElementAtOrDefault(1)
                     };
 
                     sceneActions.Add(sceneAction);
@@ -77,11 +91,16 @@ namespace ThreadCLI.Services
             return sceneActions;
         }
 
+        /// <summary>
+        /// Constructs the scene action conditions.
+        /// </summary>
+        /// <param name="conditionData">The condition data.</param>
+        /// <returns>Dictionary of conditions that need to be met for the action to be successful</returns>
         private IDictionary<string, bool> ConstructSceneActionConditions(string conditionData)
         {
             var conditions = new Dictionary<string, bool>();
 
-            var splitConditions = conditionData.Split(',');
+            var splitConditions = conditionData.SplitString(",");
 
             foreach (var splitCondition in splitConditions)
             {
