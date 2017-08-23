@@ -28,7 +28,8 @@ namespace ThreadCLI.Services
                 SceneNumber = sceneInfo.sceneNumber,
                 SceneName = sceneInfo.sceneName,
                 Script = script,
-                SceneActions = actions
+                SceneActions = actions,
+                ExitScene = actions.Any() ? false : true
             };
 
             return scene;

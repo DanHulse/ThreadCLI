@@ -19,4 +19,3 @@
 {{Scene}}
 3-Dining Room
 #The dining room still had food on the table
-@Down-(*MOVE* [2])

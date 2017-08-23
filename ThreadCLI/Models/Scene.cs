@@ -24,5 +24,10 @@ namespace ThreadCLI.Models
         /// Gets or sets the scene actions.
         /// </summary>
         public IEnumerable<ISceneAction> SceneActions { get; set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether this scene is an exit scene.
+        /// </summary>
+        public bool ExitScene { get; set; }
     }
 }
